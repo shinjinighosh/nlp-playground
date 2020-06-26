@@ -34,12 +34,21 @@ print("=========================")
 print(f"There are {len(sentences)} sentences")
 # print(f"The first sentence is\n{sentences[0]}")
 
-# tokenizing
+# tokenizing content
 tokenizer = Tokenizer(oov_token="<OOV>")
 tokenizer.fit_on_texts(sentences)
 word_index = tokenizer.word_index
 sequences = tokenizer.texts_to_sequences(sentences)
 padded = pad_sequences(sequences, padding='post')
+
+# tokenizing labels
+label_tokenizer = Tokenizer()
+label_tokenizer.fit_on_texts(labels)
+label_word_index = label_tokenizer.word_index
+label_seq = label_tokenizer.texts_to_sequences(labels)
+label_padded = pad_sequences(label_seq, padding='post')
+
 print("Length of word index is ", len(word_index))
 print(f"Representation of the first sentence is \n {padded[0]}")
 print("Shape of padded sentences is ", padded.shape)
+print("Label word index is ", label_word_index)

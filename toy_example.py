@@ -12,7 +12,8 @@ sentences = ["My name is Shinjini",
              "My plushie's name is Bruno",
              "My friend loves my plushie",
              "I love it too!",
-             "My plushie is very cute"]
+             "My plushie is very cute",
+             "Don't you all think my plushie is really cute?"]
 
 # tokenize sentences
 tokenizer = Tokenizer(num_words=100, oov_token="<OOV>")

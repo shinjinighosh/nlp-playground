@@ -76,8 +76,8 @@ print(model.summary())
 print("Starting training")
 
 num_epochs = 10
-model.fit(padded, training_labels, epochs=num_epochs,
-          validation_data=(testing_padded, testing_labels))
+history = model.fit(padded, training_labels, epochs=num_epochs,
+                    validation_data=(testing_padded, testing_labels))
 
 # inspect
 embedding_layer = model.layers[0]
@@ -86,8 +86,8 @@ print(embedding_weights.shape)  # (vocab_size, embedding_dim)
 
 reverse_word_index = dict([(value, key) for key, value in word_index.items()])
 
-out_v = io.open('vecs.tsv', 'w', encoding='utf-8')
-out_m = io.open('meta.tsv', 'w', encoding='utf-8')
+out_v = io.open('vecs_imdb.tsv', 'w', encoding='utf-8')
+out_m = io.open('meta_imdb.tsv', 'w', encoding='utf-8')
 
 for word_num in range(1, vocab_size):  # ignoring <OOV>
     word = reverse_word_index[word_num]

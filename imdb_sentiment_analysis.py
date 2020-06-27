@@ -14,7 +14,7 @@ with warnings.catch_warnings():
 
 
 # print(tf.__version__)
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 # loading dataset
 print("Loading dataset...")
@@ -29,12 +29,12 @@ testing_labels = []
 print("Generating training data")
 for sentence, label in tqdm(training_data):
     training_sentences.append(str(sentence.numpy()))
-    training_labels.append(str(label.numpy()))
+    training_labels.append(label.numpy())
 
 print("Generating testing data")
 for sentence, label in tqdm(testing_data):
     testing_sentences.append(str(sentence.numpy()))
-    testing_labels.append(str(label.numpy()))
+    testing_labels.append(label.numpy())
 
 training_labels = np.array(training_labels)
 testing_labels = np.array(testing_labels)
@@ -42,6 +42,7 @@ testing_labels = np.array(testing_labels)
 
 # tokenizing
 print("Tokenizing")
+
 vocab_size = 10000
 embedding_dim = 16
 max_length = 150
@@ -59,8 +60,20 @@ testing_padded = pad_sequences(testing_sequences, maxlen=max_length)  # truncate
 
 # creating the model
 print("Building the model")
+
 model = tf.keras.Sequential()
 model.add(tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length))
-model.add(tf.keras.layers.Flatten())
+# model.add(tf.keras.layers.Flatten())
+model.add(tf.keras.layers.GlobalAveragePooling1D())
 model.add(tf.keras.layers.Dense(6, activation='relu'))
 model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+print(model.summary())
+
+# training
+print("Starting training")
+
+num_epochs = 10
+model.fit(padded, training_labels, epochs=num_epochs,
+          validation_data=(testing_padded, testing_labels))

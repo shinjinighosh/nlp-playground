@@ -7,7 +7,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import tensorflow as tf
     import tensorflow_datasets as tfds
-    from tensorflow import keras
+    # from tensorflow import keras
+    # from tensorflow.keras import layers
     from tensorflow.keras.preprocessing.text import Tokenizer
     from tensorflow.keras.preprocessing.sequence import pad_sequences
 
@@ -40,6 +41,7 @@ testing_labels = np.array(testing_labels)
 
 
 # tokenizing
+print("Tokenizing")
 vocab_size = 10000
 embedding_dim = 16
 max_length = 150
@@ -52,5 +54,13 @@ word_index = tokenizer.word_index
 sequences = tokenizer.texts_to_sequences(training_sentences)
 padded = pad_sequences(sequences, maxlen=max_length, truncating=trucation_type)
 
-testing_sequences = tokenizer.texts_to_sequences(testing_sequences)
-testing_padded = pad_sequences(testing_sequences, maxlen=max_length)
+testing_sequences = tokenizer.texts_to_sequences(testing_sentences)
+testing_padded = pad_sequences(testing_sequences, maxlen=max_length)  # truncate them too?
+
+# creating the model
+print("Building the model")
+model = tf.keras.Sequential()
+model.add(tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length))
+model.add(tf.keras.layers.Flatten())
+model.add(tf.keras.layers.Dense(6, activation='relu'))
+model.add(tf.keras.layers.Dense(1, activation='sigmoid'))

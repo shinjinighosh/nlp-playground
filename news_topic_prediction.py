@@ -66,8 +66,6 @@ print("Tokenizing")
 tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
 tokenizer.fit_on_texts(sentences)
 word_index = tokenizer.word_index
-# sequences = tokenizer.texts_to_sequences(sentences)
-# padded = pad_sequences(sequences, padding='post')
 
 print("Creating training sequences")
 training_sequences = tokenizer.texts_to_sequences(training_sentences)
@@ -86,9 +84,7 @@ label_tokenizer = Tokenizer()
 label_tokenizer.fit_on_texts(training_labels)
 label_word_index = label_tokenizer.word_index
 label_seq = np.array(label_tokenizer.texts_to_sequences(training_labels))
-# training_label_padded = pad_sequences(label_seq, padding='post')
 testing_label_seq = np.array(label_tokenizer.texts_to_sequences(testing_labels))
-# testing_label_padded = pad_sequences(testing_label_seq, padding='post')
 
 print("Length of word index is ", len(word_index))
 # print(f"Representation of the first sentence is \n {training_padded[0]}")

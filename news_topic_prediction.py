@@ -5,6 +5,7 @@ import tqdm
 import csv
 from nltk.tokenize import word_tokenize
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 print("Ignoring Tensorflow warnings")
@@ -25,20 +26,30 @@ sentences = []
 labels = []
 
 with open("Data/bbc-text.csv", "r") as csvfile:
-    reader = csv.DictReader(csvfile)
+    # reader = csv.DictReader(csvfile)
+    # for row in tqdm.tqdm(reader):
+    #     labels.append(row['category'])
+    #     original_sentence = row['text']
+    #     text_tokens = word_tokenize(original_sentence)
+    #     pruned_sentence = [word for word in text_tokens if word not in stopwords]
+    #     sentences.append(" ".join(pruned_sentence))
+    reader = csv.reader(csvfile, delimiter=',')
+    next(reader)
     for row in tqdm.tqdm(reader):
-        labels.append(row['category'])
-        original_sentence = row['text']
-        text_tokens = word_tokenize(original_sentence)
-        pruned_sentence = [word for word in text_tokens if word not in stopwords]
-        sentences.append(" ".join(pruned_sentence))
+        labels.append(row[0])
+        sentence = row[1]
+        for word in stopwords:
+            token = " " + word + " "
+            sentence = sentence.replace(token, " ")
+            sentence = sentence.replace("  ", " ")
+        sentences.append(sentence)
 
 print("=========================")
 print(f"There are {len(sentences)} sentences")
 # print(f"The first sentence is\n{sentences[0]}")
 
 # train test split
-training_size = int(0.7 * len(sentences))
+training_size = int(0.8 * len(sentences))
 training_sentences = sentences[:training_size]
 testing_sentences = sentences[training_size:]
 training_labels = labels[:training_size]
@@ -46,7 +57,7 @@ testing_labels = labels[training_size:]
 
 # tokenizing content
 vocab_size = 10000
-max_length = 32
+max_length = 120
 trucation_type = 'post'
 padding_type = 'post'
 embedding_dim = 16
@@ -72,12 +83,12 @@ testing_padded = pad_sequences(testing_sequences, maxlen=max_length,
 # tokenizing labels
 print("Tokenizing labels...")
 label_tokenizer = Tokenizer()
-label_tokenizer.fit_on_texts(labels)
+label_tokenizer.fit_on_texts(training_labels)
 label_word_index = label_tokenizer.word_index
-label_seq = label_tokenizer.texts_to_sequences(training_labels)
-training_label_padded = pad_sequences(label_seq, padding='post')
-testing_label_seq = label_tokenizer.texts_to_sequences(testing_labels)
-testing_label_padded = pad_sequences(testing_label_seq, padding='post')
+label_seq = np.array(label_tokenizer.texts_to_sequences(training_labels))
+# training_label_padded = pad_sequences(label_seq, padding='post')
+testing_label_seq = np.array(label_tokenizer.texts_to_sequences(testing_labels))
+# testing_label_padded = pad_sequences(testing_label_seq, padding='post')
 
 print("Length of word index is ", len(word_index))
 # print(f"Representation of the first sentence is \n {training_padded[0]}")
@@ -92,17 +103,17 @@ model = tf.keras.Sequential()
 model.add(tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length))
 model.add(tf.keras.layers.GlobalAveragePooling1D())
 model.add(tf.keras.layers.Dense(24, activation='relu'))
-model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+model.add(tf.keras.layers.Dense(6, activation='sigmoid'))
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 print(model.summary())
 
 # training
 print("Starting training")
 
-num_epochs = 10
-history = model.fit(training_padded, training_label_padded, epochs=num_epochs,
-                    validation_data=(testing_padded, testing_label_padded))
+num_epochs = 15
+history = model.fit(training_padded, label_seq, epochs=num_epochs,
+                    validation_data=(testing_padded, testing_label_seq))
 
 # plotting model
 print("Creating plots")

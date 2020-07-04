@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import io
 import warnings
 import tqdm
 import csv
@@ -128,3 +129,26 @@ def plot_graphs(history, string):
 # print(history.history.keys())
 plot_graphs(history, "acc")
 plot_graphs(history, "loss")
+
+# investigation
+reverse_word_index = dict([(value, key) for (key, value) in word_index.items()])
+
+
+def decode_sentence(text):
+    return ' '.join([reverse_word_index.get(i, '?') for i in text])
+
+
+e = model.layers[0]
+weights = e.get_weights()[0]
+# print("Shape of first layer weights", weights.shape)  # shape: (vocab_size, embedding_dim)
+
+print("Writing to tsv files")
+out_v = io.open('vecs_news.tsv', 'w', encoding='utf-8')
+out_m = io.open('meta_news.tsv', 'w', encoding='utf-8')
+for word_num in range(1, vocab_size):
+    word = reverse_word_index[word_num]
+    embeddings = weights[word_num]
+    out_m.write(word + "\n")
+    out_v.write('\t'.join([str(x) for x in embeddings]) + "\n")
+out_v.close()
+out_m.close()

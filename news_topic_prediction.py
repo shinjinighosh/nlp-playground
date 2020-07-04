@@ -4,6 +4,7 @@ import warnings
 import tqdm
 import csv
 from nltk.tokenize import word_tokenize
+import matplotlib.pyplot as plt
 
 
 print("Ignoring Tensorflow warnings")
@@ -36,21 +37,87 @@ print("=========================")
 print(f"There are {len(sentences)} sentences")
 # print(f"The first sentence is\n{sentences[0]}")
 
+# train test split
+training_size = int(0.7 * len(sentences))
+training_sentences = sentences[:training_size]
+testing_sentences = sentences[training_size:]
+training_labels = labels[:training_size]
+testing_labels = labels[training_size:]
+
 # tokenizing content
-tokenizer = Tokenizer(oov_token="<OOV>")
+vocab_size = 10000
+max_length = 32
+trucation_type = 'post'
+padding_type = 'post'
+embedding_dim = 16
+
+print("Tokenizing")
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
 tokenizer.fit_on_texts(sentences)
 word_index = tokenizer.word_index
-sequences = tokenizer.texts_to_sequences(sentences)
-padded = pad_sequences(sequences, padding='post')
+# sequences = tokenizer.texts_to_sequences(sentences)
+# padded = pad_sequences(sequences, padding='post')
+
+print("Creating training sequences")
+training_sequences = tokenizer.texts_to_sequences(training_sentences)
+training_padded = pad_sequences(training_sequences, maxlen=max_length,
+                                padding=padding_type, truncating=trucation_type)
+
+print("Creating testing sequences")
+testing_sequences = tokenizer.texts_to_sequences(testing_sentences)
+testing_padded = pad_sequences(testing_sequences, maxlen=max_length,
+                               padding=padding_type, truncating=trucation_type)
+
 
 # tokenizing labels
+print("Tokenizing labels...")
 label_tokenizer = Tokenizer()
 label_tokenizer.fit_on_texts(labels)
 label_word_index = label_tokenizer.word_index
-label_seq = label_tokenizer.texts_to_sequences(labels)
-label_padded = pad_sequences(label_seq, padding='post')
+label_seq = label_tokenizer.texts_to_sequences(training_labels)
+training_label_padded = pad_sequences(label_seq, padding='post')
+testing_label_seq = label_tokenizer.texts_to_sequences(testing_labels)
+testing_label_padded = pad_sequences(testing_label_seq, padding='post')
 
 print("Length of word index is ", len(word_index))
-print(f"Representation of the first sentence is \n {padded[0]}")
-print("Shape of padded sentences is ", padded.shape)
+# print(f"Representation of the first sentence is \n {training_padded[0]}")
+# print("Shape of padded sentences is ", training_padded.shape)
 print("Label word index is ", label_word_index)
+
+
+# creating the model
+print("Building the model")
+
+model = tf.keras.Sequential()
+model.add(tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length))
+model.add(tf.keras.layers.GlobalAveragePooling1D())
+model.add(tf.keras.layers.Dense(24, activation='relu'))
+model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+print(model.summary())
+
+# training
+print("Starting training")
+
+num_epochs = 10
+history = model.fit(training_padded, training_label_padded, epochs=num_epochs,
+                    validation_data=(testing_padded, testing_label_padded))
+
+# plotting model
+print("Creating plots")
+
+
+def plot_graphs(history, string):
+    plt.plot(history.history[string])
+    plt.plot(history.history['val_' + string])
+    plt.xlabel("Epochs")
+    plt.ylabel(string)
+    plt.legend([string, 'val_' + string])
+    # plt.savefig(string + '_news_topic.jpg')
+    plt.show()
+
+
+# print(history.history.keys())
+plot_graphs(history, "acc")
+plot_graphs(history, "loss")
